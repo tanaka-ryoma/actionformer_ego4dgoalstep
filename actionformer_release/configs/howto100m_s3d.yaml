@@ -1,0 +1,59 @@
+dataset_name: howto100m
+train_split: ['train']
+val_split: ['val_seen']
+dataset: {
+  json_file: ./data/HT-step/annotation_2.json,
+  text_file: ./data/HT-step/taxonomy_2.csv,
+  feat_folder: ./data/howto100m/howto100m_s3d_features,
+  file_prefix: ~,
+  file_ext: .mp4.npy,
+  num_classes: 4958,
+  input_dim: 1024,
+  default_fps: 16,
+  feat_stride: 16,
+  num_frames: 16,
+  # serve as data augmentation
+  trunc_thresh: 0.5,
+  crop_ratio: [0.9, 1.0],
+  max_seq_len: 512, #2304>512
+}
+model: {
+  # backbone_type: conv, #追加
+  fpn_type: identity,
+  max_buffer_len_factor: 4.0, #6.0>4.0
+  n_mha_win_size: 17, #19>9
+}
+opt: {
+        # solver
+        type: AdamW, # SGD or AdamW
+        # solver params
+        learning_rate: 0.0001,
+        # excluding the warmup epochs
+        epochs: 40,
+        # lr scheduler: cosine / multistep
+        warmup: True,
+        warmup_epochs: 10,
+        schedule_type: cosine,
+}
+loader: {
+  batch_size: 8, #2>16, 8, 4で試す 
+}
+train_cfg: {
+  init_loss_norm: 100,
+  clip_grad_l2norm: 1.0,
+  cls_prior_prob: 0.01,
+  center_sample: radius,
+  center_sample_radius: 1.5,
+}
+test_cfg: {
+  voting_thresh: 0.7,
+  pre_nms_topk: 2000,
+  max_seg_num: 200, #200>512
+  min_score: 0.001,
+  # when using external scores, our model is generating "proposals"
+  # multiclass_nms: False,
+  # ext_score_file: ./data/thumos/annotations/thumos14_cls_scores.pkl,
+  # comment out L47-48 and uncomment L50 to disable score fusion
+  multiclass_nms: True,
+}
+output_folder: ./ckpt/
